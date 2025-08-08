@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.challenge.acc'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	compileOnly 'org.projectlombok:lombok:1.18.36'
+	annotationProcessor 'org.projectlombok:lombok:1.18.36'
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    implementation 'org.slf4j:slf4j-api:1.7.25'
+    implementation 'org.apache.logging.log4j:log4j-core:2.24.3'
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3'
+    implementation 'org.apache.logging.log4j:log4j-api:2.24.3'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.17.0'
+}
+
+jar {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        manifest {
+        attributes(
+                'Main-Class': 'com.challenge.acc.csv.generator.App'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
