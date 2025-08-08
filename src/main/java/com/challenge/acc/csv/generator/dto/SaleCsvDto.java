@@ -7,12 +7,13 @@ import java.util.UUID;
 
 @Builder
 public record SaleCsvDto(
-  Integer pointOfSale, BigDecimal amount, Integer quantity, Integer temperature,
+  Long id, Integer pointOfSale, BigDecimal amount, Integer quantity, Integer temperature,
     Integer customerId, UUID productId) {
   
   @Override
   public String toString(){
-    return (pointOfSale) + "," +
+    return (id) + "," +
+      (pointOfSale) + "," +
         (amount) + "," +
           (quantity) + "," +
             (temperature) + "," +
