@@ -108,7 +108,8 @@ public class App {
   
   private void generateControlFile(Long totalRows, BigDecimal totalAmount, long totalQuantity)
     throws IOException{
-    Path controlFile = Paths.get(this.fileName + ".control");
+    Path fullPath = Paths.get(this.fileName);
+    Path controlFile = Paths.get("/csv/" + fullPath.getFileName() + ".control");
     try (BufferedWriter writer = Files.newBufferedWriter(controlFile)) {
       String line = totalRows + "|" + totalAmount + "|" + totalQuantity;
       writer.write(line);
