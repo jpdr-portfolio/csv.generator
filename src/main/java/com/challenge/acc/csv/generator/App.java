@@ -1,12 +1,10 @@
 package com.challenge.acc.csv.generator;
 
 import com.challenge.acc.csv.generator.dto.SaleCsvDto;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
@@ -17,19 +15,29 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.challenge.acc.csv.generator.util.Constants.CSV_SALE_ITEM_NAMES;
 
 @Slf4j
-@RequiredArgsConstructor
 public class App {
 
   private static final String VERSION = "v1.0.0";
   
   private final Long csvRecordsCount;
-  private final AtomicLong bytesCount = new AtomicLong(0);
+  private final String fileName;
   private final Random random = new Random();
+  private long bytesCount = 0;
+  private final String appDir;
+  
+  public App(Long csvRecordsCount){
+    this(csvRecordsCount, getRandomFileName());
+  }
+  
+  public App(Long csvRecordsCount, String fileName){
+    this.csvRecordsCount = csvRecordsCount;
+    this.fileName = fileName;
+    this.appDir = System.getenv("APP_DIR");
+  }
   
   public static void main(String[] args) throws Exception{
     log.info("CSV generator " + VERSION + ".");
@@ -39,7 +47,7 @@ public class App {
     }
     try{
       long csvRecordsCount = Long.parseLong(args[0]);
-      App app = new App(csvRecordsCount);
+      App app = args.length > 1 ? new App(csvRecordsCount, args[1]) : new App(csvRecordsCount);
       app.start();
     }catch (NumberFormatException ex){
       log.error("Error: Invalid CSV records count parameter. Closing...");
@@ -47,49 +55,65 @@ public class App {
     }
   }
   
-  
   public void start() throws Exception {
     
     int availableCores = 1;
     long startMs = System.currentTimeMillis();
     
     log.info("Using " + availableCores + " threads to generate " + this.csvRecordsCount + " CSV records.");
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
-    String timestamp = LocalDateTime.now().format(formatter);
-    String appDir = System.getenv("APP_DIR");
-    log.info("The file will be stored in the " + appDir + " folder.");
-
-    Path finalFile = Paths.get(appDir).resolve("input_" + timestamp + ".csv");
+    log.info("The file will be stored in the " + this.appDir + " folder.");
+    Path finalFile = Paths.get(this.appDir).resolve(this.fileName);
     Path tempFile = Files.createTempFile("", ".tmp");
     log.info("Temporal file " + tempFile.toString());
     log.info("Generating file...");
-    generateFinalFile(this.csvRecordsCount, tempFile);
+    generateFinalFiles(this.csvRecordsCount, tempFile);
     log.info("Moving file to final path");
     Files.move(tempFile, finalFile, StandardCopyOption.REPLACE_EXISTING);
     
     log.info("File has been created: " + finalFile.toAbsolutePath());
-    log.info("A total of " + this.bytesCount.get() + " bytes where generated");
+    log.info("A total of " + this.bytesCount + " bytes where generated");
     log.info("It took a total time of " + (System.currentTimeMillis() - startMs) + " ms.");
     
     
   }
   
-  private void generateFinalFile(long recordsCount, Path finalFile) throws IOException{
+  private static String getRandomFileName(){
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+    String timestamp = LocalDateTime.now().format(formatter);
+    return "input_" + timestamp + ".csv";
+  }
+  
+  private void generateFinalFiles(long recordsCount, Path finalFile) throws IOException{
+    
+    long totalRows = 0;
+    BigDecimal totalAmount = new BigDecimal(0);
+    long totalQuantity = 0;
+    
     try (BufferedWriter writer = Files.newBufferedWriter(finalFile)) {
       String header = String.join(",", CSV_SALE_ITEM_NAMES);
       writer.write(header);
-      writer.newLine();
+      
       for (long i = 0; i < recordsCount; i++) {
-          try {
-            SaleCsvDto saleCsvDto = generateRecord(i+1);
-            String line  = saleCsvDto.toString();
-            this.bytesCount.addAndGet((line + System.lineSeparator()).length());
-            writer.write(line);
-            writer.newLine();
-          } catch (IOException e) {
-            throw new UncheckedIOException(e);
-          }
+        SaleCsvDto saleCsvDto = generateRecord(i + 1);
+        String line = saleCsvDto.toString();
+        writer.newLine();
+        writer.write(line);
+        this.bytesCount += (line + System.lineSeparator()).length();
+        totalRows += 1;
+        totalQuantity += saleCsvDto.quantity();
+        totalAmount = totalAmount.add(saleCsvDto.amount());
+        
       }
+    }
+    generateControlFile(totalRows, totalAmount, totalQuantity);
+  }
+  
+  private void generateControlFile(Long totalRows, BigDecimal totalAmount, long totalQuantity)
+    throws IOException{
+    Path controlFile = Paths.get(this.appDir).resolve(this.fileName + ".control");
+    try (BufferedWriter writer = Files.newBufferedWriter(controlFile)) {
+      String line = totalRows + "|" + totalAmount + "|" + totalQuantity;
+      writer.write(line);
     }
   }
   
