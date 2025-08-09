@@ -27,7 +27,6 @@ public class App {
   private final String fileName;
   private final Random random = new Random();
   private long bytesCount = 0;
-  private final String appDir;
   
   public App(Long csvRecordsCount){
     this(csvRecordsCount, getRandomFileName());
@@ -36,7 +35,6 @@ public class App {
   public App(Long csvRecordsCount, String fileName){
     this.csvRecordsCount = csvRecordsCount;
     this.fileName = fileName;
-    this.appDir = System.getenv("APP_DIR");
   }
   
   public static void main(String[] args) throws Exception{
@@ -61,8 +59,8 @@ public class App {
     long startMs = System.currentTimeMillis();
     
     log.info("Using " + availableCores + " threads to generate " + this.csvRecordsCount + " CSV records.");
-    log.info("The file will be stored in the " + this.appDir + " folder.");
-    Path finalFile = Paths.get(this.appDir).resolve(this.fileName);
+    log.info("The file will be stored as " + this.fileName);
+    Path finalFile = Paths.get(this.fileName);
     Path tempFile = Files.createTempFile("", ".tmp");
     log.info("Temporal file " + tempFile.toString());
     log.info("Generating file...");
@@ -80,7 +78,7 @@ public class App {
   private static String getRandomFileName(){
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
     String timestamp = LocalDateTime.now().format(formatter);
-    return "input_" + timestamp + ".csv";
+    return "/csv/input_" + timestamp + ".csv";
   }
   
   private void generateFinalFiles(long recordsCount, Path finalFile) throws IOException{
@@ -110,7 +108,7 @@ public class App {
   
   private void generateControlFile(Long totalRows, BigDecimal totalAmount, long totalQuantity)
     throws IOException{
-    Path controlFile = Paths.get(this.appDir).resolve(this.fileName + ".control");
+    Path controlFile = Paths.get(this.fileName + ".control");
     try (BufferedWriter writer = Files.newBufferedWriter(controlFile)) {
       String line = totalRows + "|" + totalAmount + "|" + totalQuantity;
       writer.write(line);
