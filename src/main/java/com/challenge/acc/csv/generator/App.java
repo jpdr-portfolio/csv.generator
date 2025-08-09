@@ -12,6 +12,7 @@ import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
@@ -57,9 +58,14 @@ public class App {
     String timestamp = LocalDateTime.now().format(formatter);
     String appDir = System.getenv("APP_DIR");
     log.info("The file will be stored in the " + appDir + " folder.");
+
     Path finalFile = Paths.get(appDir).resolve("input_" + timestamp + ".csv");
-    
-    generateFinalFile(this.csvRecordsCount, finalFile);
+    Path tempFile = Files.createTempFile("", ".tmp");
+    log.info("Temporal file " + tempFile.toString());
+    log.info("Generating file...");
+    generateFinalFile(this.csvRecordsCount, tempFile);
+    log.info("Moving file to final path");
+    Files.move(tempFile, finalFile, StandardCopyOption.REPLACE_EXISTING);
     
     log.info("File has been created: " + finalFile.toAbsolutePath());
     log.info("A total of " + this.bytesCount.get() + " bytes where generated");
