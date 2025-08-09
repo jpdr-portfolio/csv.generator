@@ -55,7 +55,9 @@ public class App {
     log.info("Using " + availableCores + " threads to generate " + this.csvRecordsCount + " CSV records.");
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
     String timestamp = LocalDateTime.now().format(formatter);
-    Path finalFile = Paths.get("input_" + timestamp + ".csv");
+    String appDir = System.getenv("APP_DIR");
+    log.info("The file will be stored in the " + appDir + " folder.");
+    Path finalFile = Paths.get(appDir).resolve("input_" + timestamp + ".csv");
     
     generateFinalFile(this.csvRecordsCount, finalFile);
     
